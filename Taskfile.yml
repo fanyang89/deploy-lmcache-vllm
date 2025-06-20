@@ -1,0 +1,35 @@
+version: "3"
+
+tasks:
+  create-volumes:
+    cmds:
+      - docker volume create vllm-cache
+
+  vllm:
+    cmds:
+      - >
+        docker run --rm --ipc=host --network=host --gpus all
+        -e HF_ENDPOINT=https://hf-mirror.com
+        -e LMCACHE_CONFIG_FILE=/etc/lmcache/lmcache.yml
+        -e CUDA_VISIBLE_DEVICES=0
+        -v vllm-cache:/root/.cache
+        -v $(pwd)/lmcache:/etc/lmcache
+        lmcache/vllm-openai:latest-nightly
+        "Qwen/Qwen3-0.6B"
+        --port 8000
+        --kv-transfer-config '{"kv_connector":"LMCacheConnectorV1", "kv_role":"kv_both"}'
+
+  lmcache:
+    cmds:
+      - uv run lmcache_server 127.0.0.1 65432
+
+  test:
+    cmds:
+      - >
+        curl -X POST http://localhost:8000/v1/completions \
+        -H "Content-Type: application/json" \
+        -d '{
+          "model": "Qwen/Qwen3-0.6B",
+          "prompt": "Explain the significance of KV cache in language models.",
+          "max_tokens": 10
+        }'

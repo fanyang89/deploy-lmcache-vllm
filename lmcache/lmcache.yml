@@ -1,0 +1,7 @@
+chunk_size: 256
+local_cpu: true
+remote_url: "lm://127.0.0.1:65432"
+remote_serde: "cachegen"
+
+# Whether retrieve() is pipelined or not
+pipelined_backend: false
